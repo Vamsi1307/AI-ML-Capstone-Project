@@ -15,6 +15,7 @@ dist/
 build/
 
 # IDE
+.vs/
 .idea/
 *.swp
 *.swo
