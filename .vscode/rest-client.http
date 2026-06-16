@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:8000/api/v1
+@contentType = application/json
+
+### Health Check
+GET {{baseUrl}}/health-check
+
+### Upload Document - test.txt
+POST {{baseUrl}}/upload-document
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+This is a test document about artificial intelligence and machine learning.
+Machine learning is a subset of artificial intelligence that focuses on enabling
+computers to learn from data without being explicitly programmed.
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+# Ask Question - Basic
+POST {{baseUrl}}/ask-question
+Content-Type: {{contentType}}
+
+{
+  "query": "What is machine learning?",
+  "use_agents": true,
+  "include_context": true
+}
+
+###
+# Ask Question - Without Agents
+POST {{baseUrl}}/ask-question
+Content-Type: {{contentType}}
+
+{
+  "query": "Tell me about artificial intelligence",
+  "use_agents": false,
+  "include_context": true
+}
+
+###
+# Ask Question - Simple Query
+POST {{baseUrl}}/ask-question
+Content-Type: {{contentType}}
+
+{
+  "query": "What is AI?",
+  "use_agents": true
+}
+
+###
+# Health Check with detailed view
+GET {{baseUrl}}/health-check
+
+###
+# Root endpoint
+GET http://localhost:8000/
+
+###
+# OpenAPI Schema
+GET http://localhost:8000/openapi.json
+
+###
+# Swagger UI
+GET http://localhost:8000/docs
+
+###
+# ReDoc
+GET http://localhost:8000/redoc

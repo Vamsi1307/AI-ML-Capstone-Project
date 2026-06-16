@@ -1,0 +1,25 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-vscode.makefile-tools",
+    "REST Client",
+    "errorlens",
+    "ms-vscode.makefile-tools",
+    "ms-azuretools.vscode-docker",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "ms-python.flake8",
+    "ms-python.mypy-type-checker",
+    "eamodio.gitlens",
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "ms-vscode.live-server",
+    "Thunder Client",
+    "httpYac.httpYac",
+    "yzhang.markdown-all-in-one",
+    "ms-azuretools.vscode-cosmosdb",
+    "ms-vscode-remote.remote-containers"
+  ]
+}
