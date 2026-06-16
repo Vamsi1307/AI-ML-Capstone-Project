@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  genai-app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_NAME=${MODEL_NAME:-gpt-4}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-ada-002}
+      - DEBUG=${DEBUG:-False}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - VECTOR_STORE_PATH=/app/app/data/vectors
+      - CHUNK_SIZE=${CHUNK_SIZE:-200}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-50}
+      - CHUNKING_STRATEGY=${CHUNKING_STRATEGY:-overlap}
+      - TOP_K_RESULTS=${TOP_K_RESULTS:-5}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.3}
+    volumes:
+      - ./app/data:/app/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  default:
+    name: genai-network
