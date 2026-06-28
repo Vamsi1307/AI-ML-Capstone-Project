@@ -68,8 +68,15 @@ class EmbeddingService:
         Returns:
             Model name for embeddings
         """
-        # If explicitly provided, use it
+        # If explicitly provided, check if it's compatible with the provider
         if self.model:
+            # If provider is LOCAL but model is an OpenAI model, use local default instead
+            if self.provider_type == ProviderType.LOCAL and any(x in self.model.lower() for x in ["text-embedding", "ada-002"]):
+                logger.warning(
+                    f"Model '{self.model}' is an OpenAI model, but provider is LOCAL. "
+                    "Falling back to local default 'nomic-embed-text'."
+                )
+                return "nomic-embed-text"
             return self.model
 
         # Get from provider configuration based on provider type
@@ -181,7 +188,7 @@ class EmbeddingService:
 
     def _embed_with_ollama(self, texts: List[str]) -> np.ndarray:
         """
-        Generate embeddings using Ollama /api/embed endpoint.
+        Generate embeddings using Ollama /api/embed or /api/embeddings.
 
         Args:
             texts: List of texts to embed
@@ -194,35 +201,43 @@ class EmbeddingService:
         for i, text in enumerate(texts):
             try:
                 logger.debug(f"Embedding text {i+1}/{len(texts)}")
-                response = requests.post(
-                    f"{self.base_url}/api/embed",
-                    json={
+                
+                # Try `/api/embed` first (modern Ollama endpoint)
+                url = f"{self.base_url}/api/embed"
+                payload = {
+                    "model": self.model,
+                    "input": text
+                }
+                
+                response = requests.post(url, json=payload, timeout=180)
+                
+                # If /api/embed fails with 404, fallback to legacy /api/embeddings
+                if response.status_code == 404:
+                    logger.info("Local LLM /api/embed returned 404, falling back to legacy /api/embeddings")
+                    url = f"{self.base_url}/api/embeddings"
+                    payload = {
                         "model": self.model,
-                        "input": text
-                    },
-                    timeout=180
-                )
+                        "prompt": text
+                    }
+                    response = requests.post(url, json=payload, timeout=180)
+
                 response.raise_for_status()
                 data = response.json()
 
-                logger.debug(f"Ollama response keys: {data.keys()}")
-
-                # Ollama returns "embeddings" key with list of vectors
+                # Handle different keys: "embeddings" (list of lists) vs "embedding" (single list)
                 if "embeddings" in data:
                     embedding = data["embeddings"]
-                    logger.debug(f"Got 'embeddings' with type {type(embedding)}, length {len(embedding) if isinstance(embedding, list) else 'N/A'}")
-
                     # If it's a list of lists (multiple embeddings), take first one
                     if isinstance(embedding, list) and len(embedding) > 0:
                         if isinstance(embedding[0], list):
-                            logger.warning(f"Embeddings is list of lists, taking first embedding")
                             embedding = embedding[0]
-
                         embeddings.append(embedding)
                     else:
                         raise ValueError(f"Embeddings is empty or invalid: {embedding}")
+                elif "embedding" in data:
+                    embeddings.append(data["embedding"])
                 else:
-                    raise ValueError(f"Response missing 'embeddings' key. Keys present: {list(data.keys())}, Full response: {data}")
+                    raise ValueError(f"Response missing 'embeddings' or 'embedding' key. Keys present: {list(data.keys())}, Full response: {data}")
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"Ollama embedding request failed: {e}")
